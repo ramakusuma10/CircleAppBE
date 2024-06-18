@@ -15,7 +15,7 @@ import swaggerDoc from "../swagger/swagger-output.json";
 dotenv.config();
 
 const app = express();
-const port = 5000;
+const port =  process.env.PORT || 5000;
 const router = express.Router();
 const routerv2 = express.Router();
 
