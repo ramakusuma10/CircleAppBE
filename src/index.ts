@@ -58,6 +58,7 @@ router.get("/follow/:id", authenticate, FollowController.follow)
 router.get("/unfollow/:id", authenticate, FollowController.unfollow)
 
 router.post("/likes", authenticate, LikeController.like)
+router.get("/search", authenticate, UserController.search)
 
 
 router.get("/users", authenticate, UserController.find)
