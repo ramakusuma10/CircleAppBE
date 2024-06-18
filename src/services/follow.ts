@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { FollowType } from '../types/types'
-import FollowDTO from '../dto/Follow-dto'
+import FollowDTO from '../dto/follow-dto'
 import ServiceResponseDTO from '../dto/serviceResponse-dto'
 import CircleError from '../utils/CircleError'
 

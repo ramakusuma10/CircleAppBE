@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { ThreadType, ThreadWithDetailType } from '../types/types'
+import { ThreadType, ThreadWithDetailType, UserType } from '../types/types'
 import ServiceResponseDTO from '../dto/serviceResponse-dto'
 import ThreadDTO from '../dto/thread-dto'
 import CircleError from '../utils/CircleError'
@@ -8,28 +8,39 @@ import { threadSchema } from '../validators/validators'
 const prisma = new PrismaClient()
 
 class ThreadServices {
-    async find(): Promise<ServiceResponseDTO<ThreadWithDetailType[]>> {
+    async find(loggedUser: UserType): Promise<ServiceResponseDTO<ThreadWithDetailType[]>> {
         try {
             const rawThreads: ThreadWithDetailType[] = await prisma.thread.findMany({
                 include: {
                     replies: true,
                     likes: true,
+                    user: true,
                 },
             })
 
-            const threads = rawThreads.map((thread) => {
-                const { replies, likes, ...rest } = thread
+            const threads: ThreadWithDetailType[] = rawThreads.map((thread) => {
+                const { replies, likes, user, ...rest } = thread
+
+                delete user.password
 
                 return {
                     ...rest,
+                    user,
                     totalReplies: replies.length,
                     totalLikes: likes.length,
+                    isLiked: thread.likes.some((like) => like.userId === loggedUser.id),
+
                 }
             })
 
             return new ServiceResponseDTO<ThreadWithDetailType[]>({
                 error: false,
-                payload: threads,
+                payload: threads.sort((x, y) => {
+                    const xStart = x.createdAt.getTime()
+                    const yEnd = y.createdAt.getTime()
+
+                    return yEnd - xStart
+                }),
             })
         } catch (error) {
             return new ServiceResponseDTO({
@@ -39,29 +50,39 @@ class ThreadServices {
         }
     }
 
-    async findOne(id: number): Promise<ServiceResponseDTO<ThreadWithDetailType>> {
+    async findOne(id: number, loggedUser: UserType): Promise<ServiceResponseDTO<ThreadWithDetailType>> {
         try {
-            const rawThreads: ThreadWithDetailType[] = await prisma.thread.findMany({
+            const rawThreads: ThreadWithDetailType = await prisma.thread.findUnique({
                 where: {
                     id: id,
                 },
                 include: {
                     replies: true,
                     likes: true,
+                    user: true,
                 },
             })
 
-            if (!rawThreads.length) {
+            if (!rawThreads) {
                 throw new CircleError({ error: 'Requested thread does not exist.' })
             }
 
-            const threads = rawThreads.map((thread) => {
-                return {
-                    ...thread,
-                    totalReplies: thread.replies.length,
-                    totalLikes: thread.likes.length,
-                }
-            })
+            const threads =  {...rawThreads,
+                likes: rawThreads.likes.map((like) => {
+                    delete like.createdAt
+                    delete like.updatedAt
+                    return like
+                }),
+                totalReplies: rawThreads.replies.length,
+                totalLikes: rawThreads.likes.length,
+                isLiked: rawThreads.likes.some((like) => like.userId === loggedUser.id),
+                replies: rawThreads.replies.sort((x, y) => {
+                    const xStart = x.createdAt.getTime()
+                    const yEnd = y.createdAt.getTime()
+
+                    return yEnd - xStart
+                }),
+            }
 
             return new ServiceResponseDTO<ThreadWithDetailType>({
                 error: false,
