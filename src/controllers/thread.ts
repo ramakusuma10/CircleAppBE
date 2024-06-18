@@ -6,8 +6,10 @@ import ServiceResponseDTO from '../dto/serviceResponse-dto'
 
 class threadControllers {
     async find(req: Request, res: Response) {
+        const loggedUser = res.locals.user
+
         const { error, payload }: ServiceResponseDTO<ThreadWithDetailType[]> =
-            await ThreadServices.find()
+            await ThreadServices.find(loggedUser)
 
         if (error) {
             return res.status(500).json(
@@ -31,10 +33,11 @@ class threadControllers {
     }
 
     async findOne(req: Request, res: Response) {
+        const loggedUser = res.locals.user
         const { id } = req.params
 
         const { error, payload }: ServiceResponseDTO<ThreadWithDetailType> =
-            await ThreadServices.findOne(+id)
+            await ThreadServices.findOne(+id, loggedUser)
 
         if (error) {
             return res.status(500).json(

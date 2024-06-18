@@ -121,6 +121,46 @@ class UserControllers {
             })
         )
     }
+
+    async search(req: Request, res: Response) {
+        const loggedUser = res.locals.user
+        const keyword = req.query.keyword
+
+        if (typeof keyword !== 'string') {
+            return res.status(400).json(
+                new ResponseDTO<null>({
+                    error: true,
+                    message: {
+                        error: 'Keyword must be a string.',
+                    },
+                    data: null,
+                })
+            )
+        }
+
+        const { error, payload } = await UserServices.searchUser({ keyword }, loggedUser)
+
+        if (error) {
+            return res.status(500).json(
+                new ResponseDTO<null>({
+                    error,
+                    message: payload,
+                    data: null,
+                })
+            )
+        }
+
+        return res.status(200).json(
+            new ResponseDTO<UserType>({
+                error,
+                message: {
+                    status: 'User retrieved!',
+                },
+                data: payload,
+            })
+        )
+    }
 }
+
 
 export default new UserControllers()
