@@ -12,6 +12,9 @@ const swaggerAutogen = require("swagger-autogen")({
       {
         url: "http://localhost:5000",
       },
+      {
+        url: "circleappbe-production.up.railway.app"
+      },
     ],
     components: {
       "@schemas": {

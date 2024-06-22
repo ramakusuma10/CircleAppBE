@@ -8,6 +8,9 @@
   "servers": [
     {
       "url": "http://localhost:5000"
+    },
+    {
+      "url": "circleappbe-production.up.railway.app"
     }
   ],
   "paths": {
@@ -254,6 +257,31 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
