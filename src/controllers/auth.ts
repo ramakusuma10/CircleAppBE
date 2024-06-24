@@ -11,11 +11,11 @@ class AuthControllers {
             content: {
                 "application/json": {
                     schema: {
-                       $ref: "#/components/schemas/RegisterDTO"
-                    }  
-                }
-            }
-        } 
+                        $ref: "#/components/schemas/RegisterDTO"
+                        }  
+                        }
+                        }
+                        } 
     */
         const avatar = 'https://api.dicebear.com/8.x/icons/svg?seed=Sassy'
         const { username, email, fullname, password, bio } = req.body
@@ -28,7 +28,7 @@ class AuthControllers {
             avatar,
             bio: bio ? bio : null,
         })
-
+        
         if (error) {
             return res.status(500).json(
                 new ResponseDTO<null>({
@@ -38,7 +38,8 @@ class AuthControllers {
                 })
             )
         }
-
+        
+        
         delete payload.password
         return res.status(200).json(
             new ResponseDTO<UserType>({
@@ -153,6 +154,6 @@ class AuthControllers {
             })
         )
     }
-}
 
+}
 export default new AuthControllers()

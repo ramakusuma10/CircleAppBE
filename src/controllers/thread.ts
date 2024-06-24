@@ -3,6 +3,7 @@ import { ThreadType, ThreadWithDetailType } from '../types/types'
 import ThreadServices from '../services/thread'
 import ResponseDTO from '../dto/response-dto'
 import ServiceResponseDTO from '../dto/serviceResponse-dto'
+import { redisClient } from '../libs/redis'
 
 class threadControllers {
     async find(req: Request, res: Response) {
@@ -102,12 +103,15 @@ class threadControllers {
         const loggedUser = res.locals.user
         const image = req.file?.path || null
         const { content } = req.body
+        
+        await redisClient.del("THREADS_DATA");
 
         const { error, payload }: ServiceResponseDTO<ThreadType> = await ThreadServices.create({
             content,
             image,
             userId: loggedUser.id,
         })
+
 
         if (error) {
             return res.status(500).json(

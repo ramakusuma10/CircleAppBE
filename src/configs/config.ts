@@ -9,5 +9,6 @@ cloudinary.config({
 })
 export const JWT_SECRET = process.env.JWT_SECRET
 export const SALT_ROUND = process.env.SALT_ROUND
+export const FRONTEND_URL = process.env.FRONTEND_URL
 
 export { cloudinary }
