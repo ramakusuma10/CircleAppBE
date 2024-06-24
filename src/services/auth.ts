@@ -1,4 +1,4 @@
-import { PrismaClient, VerificationType } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { UserType } from '../types/types'
 import { JWT_SECRET } from '../configs/config'
 import jwt from 'jsonwebtoken'
