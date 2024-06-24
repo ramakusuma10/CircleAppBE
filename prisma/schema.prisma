@@ -21,7 +21,6 @@ model User {
   password String?
   avatar   String?
   bio      String?
-
   threads    Thread[] @relation("UserThreads")
   replies    Reply[]  @relation("UserReplies")
   likes      Like[]   @relation("UserLikes")
@@ -90,3 +89,4 @@ model Follow {
   followerId    Int?
   @@map("follows")
 }
+
