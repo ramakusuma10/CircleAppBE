@@ -1,6 +1,6 @@
 import cors from "cors";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import AuthController from "./controllers/auth";
 import ThreadController from "./controllers/thread";
 import UserController from "./controllers/user";
@@ -11,6 +11,10 @@ import upload from "./middlewares/upload-file";
 import authenticate from "./middlewares/authenticate";
 import swaggerUi from "swagger-ui-express";
 import swaggerDoc from "../swagger/swagger-output.json";
+import { initializeRedisClient, redisClient } from "./libs/redis";
+import { rateLimit } from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+
 
 dotenv.config();
 
@@ -19,63 +23,88 @@ const port =  process.env.PORT || 5000;
 const router = express.Router();
 const routerv2 = express.Router();
 
-app.use(cors());
-app.use(express.json());
-app.use("/api/v1", router);
-app.use("/api/v2", routerv2);
-app.use("/uploads", express.static("uploads"));
-app.use(
-  "/docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDoc, {
-    explorer: true,
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  })
-);
+initializeRedisClient().then(() => {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, 
+    standardHeaders: "draft-7", 
+    legacyHeaders: false, 
+    store: new RedisStore({
+      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+    }),
+  });
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello welcome to circle!");
-});
+  app.use(limiter)
+  app.use(cors());
+  app.use(express.json());
+  app.use("/api/v1", router);
+  app.use("/api/v2", routerv2);
+  app.use("/uploads", express.static("uploads"));
+  app.use(
+    "/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDoc, {
+      explorer: true,
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    })
+  );
 
-// v1
-router.get("/", (req: Request, res: Response) => {
-  res.send("Welcome to v1!");
-});
+  app.get("/", (req: Request, res: Response) => {
+    res.send("Hello welcome to circle!");
+  });
 
-router.get("/threads", authenticate, ThreadController.find);
-router.get("/threads/:id", authenticate, ThreadController.findOne);
-router.get("/threads/user/:id", authenticate, ThreadController.findUser);
+  // v1
+  router.get("/", (req: Request, res: Response) => {
+    res.send("Welcome to v1!");
+  });
 
-router.post("/threads",authenticate,upload.single("image"),ThreadController.create);
-router.delete("/threads/:id", authenticate, ThreadController.delete);
+  router.get("/threads", authenticate,  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await redisClient.get("THREADS_DATA");
+    if (result) return res.json(JSON.parse(result));
 
-router.delete("/replies/:id", authenticate, ReplyController.delete)
-router.post('/replies',upload.single('image'),authenticate,ReplyController.create)
+    next();
+  },ThreadController.find);
+  router.get("/threads/:id", authenticate, ThreadController.findOne);
+  router.get("/threads/user/:id", authenticate, ThreadController.findUser);
 
-router.get("/follow/:id", authenticate, FollowController.follow)
-router.get("/unfollow/:id", authenticate, FollowController.unfollow)
+  router.post("/threads",authenticate,upload.single("image"),ThreadController.create);
+  router.delete("/threads/:id", authenticate, ThreadController.delete);
 
-router.post("/likes", authenticate, LikeController.like)
-router.get("/search", authenticate, UserController.search)
+  router.delete("/replies/:id", authenticate, ReplyController.delete)
+  router.post('/replies',upload.single('image'),authenticate,ReplyController.create)
+
+  router.get("/follow/:id", authenticate, FollowController.follow)
+  router.get("/unfollow/:id", authenticate, FollowController.unfollow)
+
+  router.post("/likes", authenticate, LikeController.like)
+  router.get("/search", authenticate, UserController.search)
 
 
-router.get("/users", authenticate, UserController.find)
-router.get("/profile", authenticate, UserController.findlogged)
-router.get("/users/:id", authenticate, UserController.findOne)
-router.patch("/users/profile",upload.single('avatar'),authenticate,UserController.update)
+  router.get("/users", authenticate, async (req: Request, res: Response, next: NextFunction) => {
+    const result = await redisClient.get("USER_DATA");
+    if (result) return res.json(JSON.parse(result));
 
-router.post("/auth/register", AuthController.register)
-router.post("/auth/login", AuthController.login)
-router.post("/auth/forgot", AuthController.forgotPassword)
-router.patch("/auth/reset", authenticate, AuthController.resetPassword)
+    next();
+  },UserController.find)
+  router.get("/profile", authenticate, UserController.findlogged)
+  router.get("/users/:id", authenticate, UserController.findOne)
+  router.patch("/users/profile",upload.single('avatar'),authenticate,UserController.update)
 
-// v2
-routerv2.get("/", (req: Request, res: Response) => {
-  res.send("Welcome to v2!");
-});
+  router.post("/auth/register", AuthController.register)
+  router.post("/auth/login", AuthController.login)
+  router.post("/auth/forgot", AuthController.forgotPassword)
+  router.patch("/auth/reset", authenticate, AuthController.resetPassword)
 
-app.listen(port, () => {
-  console.log(`Server berjalan di port ${port}`);
+  // v2
+  routerv2.get("/", (req: Request, res: Response) => {
+    res.send("Welcome to v2!");
+  });
+
+  initializeRedisClient().then(() => {
+    app.listen(port, () => {
+      console.log(`Server berjalan di port ${port}`);
+    });
+  });
 });
