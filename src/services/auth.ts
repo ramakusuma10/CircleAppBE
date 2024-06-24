@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, VerificationType } from '@prisma/client'
 import { UserType } from '../types/types'
 import { JWT_SECRET } from '../configs/config'
 import jwt from 'jsonwebtoken'
@@ -10,6 +10,8 @@ import CircleError from '../utils/CircleError'
 import ForgotPasswordDTO from '../dto/forgotpassword-dto'
 import ResetPasswordDTO from '../dto/resetpassword-dto'
 import {forgotPasswordSchema,loginSchema,registerSchema,resetPasswordSchema} from '../validators/validators'
+import { FRONTEND_URL } from '../configs/config'
+import { transporter } from '../libs/nodemailer'
 
 const prisma = new PrismaClient()
 
@@ -28,7 +30,7 @@ class AuthServices {
                     password: await Hasher.hashPassword(registerDTO.password),
                 },
             })
-
+            
             delete user.password
             return new ServiceResponseDTO<UserType>({
                 error: false,
@@ -102,6 +104,13 @@ class AuthServices {
 
             delete requestedUser.password
             const token = jwt.sign(requestedUser, JWT_SECRET)
+
+            await transporter.sendMail({
+                from: "Circle <ramakusuma098@gmail.com>", 
+                to: requestedUser.email,
+                subject: "Verification Link", 
+                html: `<a href="${FRONTEND_URL}/api/v1/auth/verify-email?token=${token}">Klik untuk verifikasi email kamu!</a>`, // html body
+              });
 
             return new ServiceResponseDTO<string>({
                 error: false,
