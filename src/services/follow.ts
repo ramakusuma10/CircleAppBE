@@ -21,6 +21,9 @@ class FollowServices {
                 data: FollowDTO,
             })
 
+            delete createdFollow.createdAt
+            delete createdFollow.updatedAt
+
             return new ServiceResponseDTO<FollowType>({
                 error: false,
                 payload: createdFollow,
@@ -50,6 +53,9 @@ class FollowServices {
                     id: isFollowed.id,
                 },
             })
+            
+            delete createdUnfollow.createdAt
+            delete createdUnfollow.updatedAt
 
             return new ServiceResponseDTO<FollowType>({
                 error: false,

@@ -14,6 +14,8 @@ class LikeServices {
             if (isLiked) {
                 
                 const removedLike: LikeType = await this.removeLike(isLiked)
+                delete removedLike.createdAt
+                delete removedLike.updatedAt
                 return new ServiceResponseDTO<LikeType>({
                     error: false,
                     payload: removedLike,

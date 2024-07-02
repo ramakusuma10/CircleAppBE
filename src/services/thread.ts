@@ -20,8 +20,12 @@ class ThreadServices {
 
             const threads: ThreadWithDetailType[] = rawThreads.map((thread) => {
                 const { replies, likes, user, ...rest } = thread
-
+                
+                delete user.createdAt
+                delete user.updatedAt
                 delete user.password
+                delete rest.updatedAt
+
 
                 return {
                     ...rest,

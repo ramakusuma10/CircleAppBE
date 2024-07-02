@@ -11,18 +11,53 @@ const prisma = new PrismaClient()
 class UserServices {
     async findOne(id: number, loggedUser: UserType): Promise<ServiceResponseDTO<UserType>> {
         try {
-            const user: UserWithFollowersType = await prisma.user.findUnique({
+            const rawUser: UserWithFollowersType = await prisma.user.findUnique({
                 where: {
                     id: id,
                 },
                 include: {
                     followers: true,
+                    followeds: true,
+                    threads: {
+                        include: {
+                            replies: true,
+                            likes: true,
+                        },
+                    },
                 },
             })
 
-            user.isFollowed = user.followers.some((follower) => follower.id === loggedUser.id)
+            const user = {
+                ...rawUser,
+                totalFollower: rawUser.followers.length,
+                totalFollowed: rawUser.followeds.length,
+                isFollowed: rawUser.followers.some(
+                    (follower) => follower.followerId === loggedUser.id
+                ),
+                threads: rawUser.threads.map((thread) => {
+                    const replies = thread.replies
+                    const likes = thread.likes
+
+                    delete thread.createdAt
+                    delete thread.replies
+                    delete thread.likes
+
+                    delete loggedUser.createdAt
+                    delete loggedUser.updatedAt
+
+                    return {
+                        ...thread,
+                        author: rawUser,
+                        totalReplies: replies.length,
+                        totalLikes: likes.length,
+                        isLiked: likes.some((like) => like.userId === loggedUser.id),
+                    }
+                }),
+            }
+
             delete user.password
-            delete user.followers
+            delete user.createdAt
+            delete user.updatedAt
 
             return new ServiceResponseDTO<UserType>({
                 error: false,
@@ -57,7 +92,7 @@ class UserServices {
             const user = {
                 ...defaultUser,
                 totalFollower: defaultUser.followers.length,
-                totalFollowing: defaultUser.followers.length,
+                totalFollowed: defaultUser.followeds.length,
                 threads: defaultUser.threads.map((thread) => {
                     const replies = thread.replies
                     const likes = thread.likes
@@ -81,6 +116,7 @@ class UserServices {
             delete user.password
             delete user.createdAt
             delete user.updatedAt
+
             return new ServiceResponseDTO<UserType>({
                 error: false,
                 payload: user,
@@ -101,8 +137,7 @@ class UserServices {
                 },
             })
 
-            const users: UserType[] = rawUsers
-                .filter((user) => user.id !== loggedUser.id)
+            const users: UserWithFollowersType[] = rawUsers
                 .map((user) => {
                     const followers = user.followers
                     delete user.followers
@@ -157,6 +192,9 @@ class UserServices {
             })
 
             delete editedUser.password
+            delete editedUser.updatedAt
+            delete editedUser.createdAt
+            
             return new ServiceResponseDTO<UserType>({
                 error: false,
                 payload: editedUser,
