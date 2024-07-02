@@ -53,7 +53,7 @@ export interface ServiceResponseType<T> {
 
 export interface UserWithFollowersType extends UserType {
     followers?: FollowType[]
-    followings?: FollowType[]
+    followeds?: FollowType[]
     threads?: ThreadWithDetailType[]
 }
 
