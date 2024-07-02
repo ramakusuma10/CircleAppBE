@@ -82,12 +82,7 @@ initializeRedisClient().then(() => {
   router.get("/search", authenticate, UserController.search)
 
 
-  router.get("/users", authenticate, async (req: Request, res: Response, next: NextFunction) => {
-    const result = await redisClient.get("USER_DATA");
-    if (result) return res.json(JSON.parse(result));
-
-    next();
-  },UserController.find)
+  router.get("/users", authenticate,UserController.find)
   router.get("/profile", authenticate, UserController.findlogged)
   router.get("/users/:id", authenticate, UserController.findOne)
   router.patch("/users/profile",upload.single('avatar'),authenticate,UserController.update)
