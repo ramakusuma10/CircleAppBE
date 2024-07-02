@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+   output = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -24,7 +25,7 @@ model User {
   threads    Thread[] @relation("UserThreads")
   replies    Reply[]  @relation("UserReplies")
   likes      Like[]   @relation("UserLikes")
-  followeds Follow[] @relation("UserFollowed")
+  followeds Follow[] @relation("UserFolloweds")
   followers  Follow[] @relation("UserFollowers")
 
   createdAt DateTime @default(now())
@@ -40,10 +41,10 @@ model Reply {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  repliesBy      User?    @relation(fields: [userId], references: [id],name:"UserReplies")
-  userId         Int?
-  replies        Thread?  @relation(fields: [threadId], references: [id],name:"ThreadReplies")
-  threadId       Int?
+  repliesBy      User    @relation(fields: [userId], references: [id],name:"UserReplies", onDelete: Cascade)
+  userId         Int
+  replies        Thread  @relation(fields: [threadId], references: [id],name:"ThreadReplies", onDelete: Cascade)
+  threadId       Int
 
   @@map("replies")
 }
@@ -53,8 +54,8 @@ model Thread {
   content String
   image   String?
 
-  user   User? @relation(fields: [userId], references: [id],name:"UserThreads")
-  userId Int?
+  user   User @relation(fields: [userId], references: [id],name:"UserThreads", onDelete: Cascade)
+  userId Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -70,10 +71,10 @@ model Like {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  likedBy     User?      @relation(fields: [userId], references: [id], name: "UserLikes")
-  userId      Int?
-  likes       Thread?     @relation(fields: [threadId], references: [id], name: "ThreadLikes")
-  threadId    Int?
+  likedBy     User      @relation(fields: [userId], references: [id], name: "UserLikes", onDelete: Cascade)
+  userId      Int
+  likes       Thread     @relation(fields: [threadId], references: [id], name: "ThreadLikes", onDelete: Cascade)
+  threadId    Int
 
   @@map("likes")
 }
@@ -83,10 +84,10 @@ model Follow {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   
-  followed     User?      @relation(fields: [followedId], references: [id], name: "UserFollowed")
-  followedId   Int?
-  followers     User?      @relation(fields: [followerId], references: [id], name: "UserFollowers")
-  followerId    Int?
+  followed     User      @relation(fields: [followedId], references: [id], name: "UserFollowers", onDelete: Cascade)
+  followedId   Int
+  followers     User     @relation(fields: [followerId], references: [id], name: "UserFolloweds", onDelete: Cascade)
+  followerId    Int
   @@map("follows")
 }
 
