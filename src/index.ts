@@ -11,9 +11,9 @@ import upload from "./middlewares/upload-file";
 import authenticate from "./middlewares/authenticate";
 import swaggerUi from "swagger-ui-express";
 import swaggerDoc from "../swagger/swagger-output.json";
-import { initializeRedisClient, redisClient } from "./libs/redis";
-import { rateLimit } from "express-rate-limit";
-import { RedisStore } from "rate-limit-redis";
+// import { initializeRedisClient, redisClient } from "./libs/redis";
+// import { rateLimit } from "express-rate-limit";
+// import { RedisStore } from "rate-limit-redis";
 
 
 dotenv.config();
@@ -23,18 +23,18 @@ const port =  process.env.PORT || 5000;
 const router = express.Router();
 const routerv2 = express.Router();
 
-initializeRedisClient().then(() => {
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 1000, 
-    standardHeaders: "draft-7", 
-    legacyHeaders: false, 
-    store: new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-    }),
-  });
+// initializeRedisClient().then(() => {
+//   const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000, // 15 minutes
+//     limit: 1000, 
+//     standardHeaders: "draft-7", 
+//     legacyHeaders: false, 
+//     store: new RedisStore({
+//       sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+//     }),
+//   });
 
-  app.use(limiter)
+  // app.use(limiter)
   app.use(cors());
   app.use(express.json());
   app.use("/api/v1", router);
@@ -60,12 +60,7 @@ initializeRedisClient().then(() => {
     res.send("Welcome to v1!");
   });
 
-  router.get("/threads", authenticate,  async (req: Request, res: Response, next: NextFunction) => {
-    const result = await redisClient.get("THREADS_DATA");
-    if (result) return res.json(JSON.parse(result));
-
-    next();
-  },ThreadController.find);
+  router.get("/threads", authenticate,ThreadController.find);
   router.get("/threads/:id", authenticate, ThreadController.findOne);
   router.get("/threads/user/:id", authenticate, ThreadController.findUser);
 
@@ -97,9 +92,8 @@ initializeRedisClient().then(() => {
     res.send("Welcome to v2!");
   });
 
-  initializeRedisClient().then(() => {
-    app.listen(port, () => {
-      console.log(`Server berjalan di port ${port}`);
-    });
+  
+  app.listen(port, () => {
+    console.log(`Server berjalan di port ${port}`);
   });
-});
+  
